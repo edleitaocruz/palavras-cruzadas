@@ -246,13 +246,10 @@ function buildCluesHTML(){
     return Object.values(g).map(gKeys=>{
       const base=groupKey(gKeys[0]);
       const groupActive=gKeys.includes(activeClueKey);
-      // Each word gets its own key label inline, separated by space
-      const defsHtml=gKeys.map((k,i)=>{
+      const defsHtml=gKeys.map(k=>{
         const txt=withPeriod(clueInputs[k])||`(${clues[k].length}L).`;
         const isAW=k===activeClueKey;
-        // Show sub-label (4H2) only when there are multiple words in the group
-        const subLabel=gKeys.length>1?`<span style="font-size:9px;font-weight:700;color:var(--accent);margin-right:2px;opacity:.7">${k}</span>`:'';
-        return `<span class="solver-word${isAW?' active-word':''}" onclick="event.stopPropagation();clickClueTag('${k}')">${subLabel}${txt} </span>`;
+        return `<span class="solver-word${isAW?' active-word':''}" onclick="event.stopPropagation();clickClueTag('${k}')">${txt} </span>`;
       }).join('');
       return `<div class="solver-clue-row${groupActive?' active-row':''}" onclick="clickClueTag('${gKeys[0]}')"><span class="solver-clue-number">${base}</span><span class="solver-clue-body">${defsHtml}</span></div>`;
     }).join('');

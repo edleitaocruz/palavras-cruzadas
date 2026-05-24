@@ -250,7 +250,7 @@ function buildCluesHTML(){
   function renderGroup(gKeys){
     return gKeys.map(k=>{
       const cl=clues[k],isA=k===activeClueKey,v=clueInputs[k]||'';
-      return `<div class="clue-item"><span class="clue-tag${isA?' active-tag':''}" onclick="clickClueTag('${k}')">${k}</span><textarea class="clue-input" data-key="${k}" placeholder="Definição ${cl.length}L...">${v}</textarea><span class="clue-len">${cl.length}L</span></div>`;
+      return `<div class="clue-item"><span class="clue-tag${isA?' active-tag':''}" onclick="clickClueTag('${k}')">${k}</span><textarea class="clue-input" data-key="${k}" placeholder="palavra de ${cl.length} letras...">${v}</textarea><span class="clue-len">${cl.length}L</span></div>`;
     }).join('');
   }
   function groupAndRender(ks){
@@ -614,7 +614,7 @@ function fullRender(){
       </div>
       <div class="clues-panel">
         ${solverBanner}
-        <div class="clues-section-label" style="margin-bottom:12px">Definições</div>
+        <div class="clues-section-label" style="margin-bottom:12px;color:var(--text-1);font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;">Definições</div>
         <div id="clues-inner">${buildCluesHTML()}</div>
       </div>
     </div>
