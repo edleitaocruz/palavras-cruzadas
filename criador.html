@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Palavras Cruzadas — Criador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg-base:#f5f5f3;--bg-surface:#fff;--bg-raised:#f0efed;--bg-input:#fafaf8;
+  --border:#e2e0db;--border-sub:#ece9e3;--text-1:#1a1a18;--text-2:#6b6b68;--text-3:#b0afa9;
+  --accent:#185FA5;--accent-soft:#e6f1fb;--cell:42px;--label-gap:8px;
+}
+html.dark{
+  --bg-base:#0d0d0d;--bg-surface:#151515;--bg-raised:#1a1a1a;--bg-input:#111;
+  --border:#282828;--border-sub:#1e1e1e;--text-1:#efefef;--text-2:#999;--text-3:#484848;
+  --accent-soft:#0c2a45;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg-base);color:var(--text-1);min-height:100vh;font-size:14px;}
+.header{background:var(--bg-surface);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;}
+.app-title{font-size:15px;font-weight:600;letter-spacing:-.3px;}
+.app-role{font-size:11px;font-weight:500;color:var(--text-3);background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:2px 8px;}
+.puzzle-num-wrap{display:flex;align-items:center;gap:6px;margin-left:4px;}
+.puzzle-num-label{font-size:11px;color:var(--text-3);font-weight:500;}
+.puzzle-num-input{font-family:'Inter',sans-serif;font-size:13px;font-weight:600;width:64px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--bg-input);color:var(--text-1);text-align:center;}
+.puzzle-num-input:focus{outline:2px solid var(--accent);border-color:transparent;}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.icon-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .12s;}
+.icon-btn:hover{background:var(--border);color:var(--text-1);}
+.dir-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--text-2);background:var(--bg-raised);border:1px solid var(--border);border-radius:12px;padding:3px 10px;}
+.approved-pill{font-size:11px;font-weight:500;background:#1a3a1a;color:#6fcf6f;border:1px solid #2d5a2d;border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px;}
+.main{display:flex;min-height:calc(100vh - 52px - 52px);}
+.grid-panel{padding:24px 20px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;}
+.grid-container{display:inline-grid;grid-template-columns:calc(var(--cell) + var(--label-gap)) auto;grid-template-rows:calc(var(--cell)*0.4 + var(--label-gap)) auto;}
+.grid-col-labels{grid-column:2;grid-row:1;display:flex;align-items:flex-end;padding-bottom:var(--label-gap);}
+.col-label{width:var(--cell);text-align:center;font-size:13px;font-weight:700;color:var(--text-2);line-height:1;}
+.grid-row-labels{grid-column:1;grid-row:2;display:flex;flex-direction:column;align-items:flex-end;padding-right:var(--label-gap);}
+.row-label{height:var(--cell);display:flex;align-items:center;justify-content:flex-end;font-size:13px;font-weight:700;color:var(--text-2);line-height:1;}
+.grid-wrap{grid-column:2;grid-row:2;border:2px solid var(--text-1);display:inline-flex;flex-direction:column;}
+.cell-row{display:flex;}
+.cell{width:var(--cell);height:var(--cell);border:.5px solid var(--border);background:var(--bg-surface);position:relative;flex-shrink:0;cursor:pointer;user-select:none;}
+.cell.black{background:var(--text-1);border-color:var(--text-1);}
+.cell.highlight{background:var(--accent-soft);}
+.cell.active-cell{outline:2px solid var(--accent);outline-offset:-2px;background:#c5ddf5;}
+html.dark .cell.active-cell{background:#0c2a45;}
+.cell.active-cell::after{content:'';position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.8;}
+.cell-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:var(--text-1);text-transform:uppercase;line-height:1;pointer-events:none;}
+.cell-input{position:absolute;inset:0;width:100%;height:100%;background:transparent;border:none;outline:none;opacity:0;cursor:pointer;font-size:0;}
+.clues-panel{flex:1;background:var(--bg-surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;max-height:calc(100vh - 52px - 52px);}
+.clues-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border-sub);}
+.clue-row-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:flex-start;}
+.clue-item{display:flex;gap:6px;align-items:flex-start;flex:1;min-width:160px;}
+.clue-tag{font-size:10px;font-weight:600;background:var(--bg-raised);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-2);white-space:nowrap;flex-shrink:0;cursor:pointer;}
+.clue-tag.active-tag{background:var(--accent);color:#fff;border-color:var(--accent);}
+.clue-input{flex:1;font-family:'Inter',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:5px;padding:5px 8px;background:var(--bg-input);color:var(--text-1);resize:none;height:30px;}
+.clue-input:focus{outline:2px solid var(--accent);border-color:transparent;}
+.clue-len{font-size:10px;color:var(--text-3);padding-top:8px;flex-shrink:0;}
+.section-gap{margin-top:16px;}
+.hint-text{font-size:11px;color:var(--text-3);}
+.notes-wrap{display:flex;flex-direction:column;gap:5px;}
+.notes-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);}
+.notes-readonly{font-family:'Inter',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--bg-raised);color:var(--text-2);min-height:80px;width:100%;line-height:1.6;white-space:pre-wrap;}
+.solver-banner{display:flex;align-items:center;gap:8px;background:#1a3a1a;border:1px solid #2d5a2d;border-radius:8px;padding:10px 14px;margin-bottom:14px;}
+.solver-banner i{color:#6fcf6f;font-size:16px;}
+.solver-banner span{font-size:12px;font-weight:600;color:#6fcf6f;}
+.actions{position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:52px;}
+.actions-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.btn{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-1);cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .1s;}
+.btn:hover{background:var(--border);}
+.btn.primary{background:var(--text-1);color:var(--bg-base);border-color:var(--text-1);}
+html.dark .btn.primary:hover{background:#c8c8c8;}
+html:not(.dark) .btn.primary:hover{background:#333;}
+kbd{display:inline-block;background:var(--border);border-radius:3px;padding:1px 5px;font-size:11px;color:var(--text-1);}
+.copy-toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:var(--text-1);color:var(--bg-base);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;}
+.copy-toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="copy-toast" id="copy-toast">Copiado para a área de transferência</div>
+<canvas id="off-canvas" style="display:none"></canvas>
+<script>
+const N=10;
+let isDark=false;
+let puzzleNum='001';
+let grid=Array.from({length:N},()=>Array(N).fill(false));
+let solutions=Array.from({length:N},()=>Array(N).fill(''));
+let clues={},clueInputs={},creatorApproved=false,solverApproved=false;
+let solverNotes='',activeClueKey=null,savedState=null;
+let selR=null,selC=null,curDir='H';
+
+function toggleDark(){isDark=!isDark;document.documentElement.classList.toggle('dark',isDark);fullRender();}
+function groupKey(k){return k.replace(/(\d+[HV])\d+$/,'$1');}
+
+function computeClues(){
+  const nc={},hc={},vc={};
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    if(grid[r][c]) continue;
+    if((c===0||grid[r][c-1])&&c<N-1&&!grid[r][c+1]){
+      let len=0,cc=c;while(cc<N&&!grid[r][cc]){len++;cc++;}
+      if(len>=2){
+        const cells=Array.from({length:len},(_,i)=>[r,c+i]);
+        const base=`${r+1}H`;if(!hc[base])hc[base]=0;hc[base]++;
+        const k=hc[base]===1?base:`${base}${hc[base]}`;
+        nc[k]={cells,length:len,direction:'H',row:r,col:c};
+      }
+    }
+    if((r===0||grid[r-1][c])&&r<N-1&&!grid[r+1][c]){
+      let len=0,rr=r;while(rr<N&&!grid[rr][c]){len++;rr++;}
+      if(len>=2){
+        const cells=Array.from({length:len},(_,i)=>[r+i,c]);
+        const base=`${c+1}V`;if(!vc[base])vc[base]=0;vc[base]++;
+        const k=vc[base]===1?base:`${base}${vc[base]}`;
+        nc[k]={cells,length:len,direction:'V',row:r,col:c};
+      }
+    }
+  }
+  const sorted={};
+  const hK=Object.keys(nc).filter(k=>k.includes('H')).sort((a,b)=>parseInt(a)-parseInt(b));
+  const vK=Object.keys(nc).filter(k=>k.includes('V')).sort((a,b)=>parseInt(a)-parseInt(b));
+  [...hK,...vK].forEach(k=>sorted[k]=nc[k]);
+  return sorted;
+}
+
+function findClueKey(r,c,dir){
+  return Object.keys(clues).find(k=>clues[k].direction===dir&&clues[k].cells.some(([cr,cc])=>cr===r&&cc===c))||null;
+}
+
+function selectCell(r,c,dir){
+  selR=r;selC=c;curDir=dir;
+  activeClueKey=findClueKey(r,c,dir)||findClueKey(r,c,dir==='H'?'V':'H')||null;
+  if(activeClueKey) curDir=clues[activeClueKey].direction;
+}
+
+function allClueKeys(){
+  const hK=Object.keys(clues).filter(k=>k.includes('H')).sort((a,b)=>parseInt(a)-parseInt(b));
+  const vK=Object.keys(clues).filter(k=>k.includes('V')).sort((a,b)=>parseInt(a)-parseInt(b));
+  return [...hK,...vK];
+}
+
+function jumpToNextClue(){
+  const keys=allClueKeys();if(!keys.length)return;
+  const idx=activeClueKey?keys.indexOf(activeClueKey):-1;
+  const nextKey=keys[(idx+1)%keys.length];
+  const cl=clues[nextKey];if(!cl)return;
+  activeClueKey=nextKey;selR=cl.cells[0][0];selC=cl.cells[0][1];curDir=cl.direction;
+  partialRender();focusInput(selR,selC);
+}
+
+function onCellClick(r,c){
+  if(creatorApproved) return;
+  if(grid[r][c]){
+    grid[r][c]=false;solutions[r][c]='';
+    clues=computeClues();patchCell(r,c);selectCell(r,c,curDir);partialRender();focusInput(r,c);
+    return;
+  }
+  if(selR===r&&selC===c) selectCell(r,c,curDir==='H'?'V':'H');
+  else selectCell(r,c,curDir);
+  partialRender();focusInput(r,c);
+}
+
+function patchCell(r,c){
+  const el=document.querySelector(`.cell[data-pos="${r}-${c}"]`);if(!el)return;
+  el.className='cell'+(grid[r][c]?' black':'');
+  if(!grid[r][c]){
+    el.innerHTML=`<span class="cell-letter" data-l="${r}-${c}">${solutions[r][c]||''}</span><input class="cell-input" data-cell="${r}-${c}" maxlength="1" autocomplete="off" autocorrect="off" spellcheck="false" onclick="onCellClick(${r},${c})" oninput="onInput(event,${r},${c})" onkeydown="onKeyDown(event,${r},${c})">`;
+  } else {
+    el.innerHTML=`<input class="cell-input" style="cursor:pointer" onclick="onCellClick(${r},${c})">`;
+  }
+}
+
+function onKeyDown(e,r,c){
+  if((e.key===' '||e.key==='Enter')&&!creatorApproved){
+    e.preventDefault();
+    grid[r][c]=true;solutions[r][c]='';selR=null;selC=null;activeClueKey=null;
+    clues=computeClues();patchCell(r,c);partialRender();return;
+  }
+  const dirs={ArrowRight:[0,1,'H'],ArrowLeft:[0,-1,'H'],ArrowDown:[1,0,'V'],ArrowUp:[-1,0,'V']};
+  if(e.key==='Tab'){e.preventDefault();return;}
+  if(dirs[e.key]){
+    e.preventDefault();
+    const[dr,dc,nd]=dirs[e.key];let nr=r+dr,nc=c+dc;
+    while(nr>=0&&nr<N&&nc>=0&&nc<N&&grid[nr][nc]){nr+=dr;nc+=dc;}
+    if(nr>=0&&nr<N&&nc>=0&&nc<N){selectCell(nr,nc,nd);partialRender();focusInput(nr,nc);}
+    return;
+  }
+  if(e.key==='Backspace'){
+    e.preventDefault();
+    if(solutions[r][c]){solutions[r][c]='';updateLetterSpan(r,c,'');partialRender();focusInput(r,c);}
+    else{
+      retreat();
+      if(selR!==null){solutions[selR][selC]='';updateLetterSpan(selR,selC,'');partialRender();focusInput(selR,selC);}
+    }
+    return;
+  }
+}
+
+function onInput(e,r,c){
+  const v=e.target.value.replace(/[^a-zA-Z]/g,'').toUpperCase().slice(-1);
+  e.target.value='';if(!v)return;
+  solutions[r][c]=v;updateLetterSpan(r,c,v);
+  if(!advanceInClue()){jumpToNextClue();}
+  else{partialRender();if(selR!==null)focusInput(selR,selC);}
+}
+
+function advanceInClue(){
+  if(selR===null)return false;
+  if(curDir==='H'){
+    let nc=selC+1;while(nc<N&&grid[selR][nc])nc++;
+    if(nc<N&&findClueKey(selR,nc,'H')===activeClueKey){selC=nc;return true;}return false;
+  } else {
+    let nr=selR+1;while(nr<N&&grid[nr]&&grid[nr][selC])nr++;
+    if(nr<N&&findClueKey(nr,selC,'V')===activeClueKey){selR=nr;return true;}return false;
+  }
+}
+
+function retreat(){
+  if(selR===null)return;
+  if(curDir==='H'){let nc=selC-1;while(nc>=0&&grid[selR][nc])nc--;if(nc>=0)selectCell(selR,nc,'H');}
+  else{let nr=selR-1;while(nr>=0&&grid[nr][selC])nr--;if(nr>=0)selectCell(nr,selC,'V');}
+}
+
+function focusInput(r,c){setTimeout(()=>{const el=document.querySelector(`input[data-cell="${r}-${c}"]`);if(el)el.focus();},0);}
+function updateLetterSpan(r,c,v){const sp=document.querySelector(`.cell-letter[data-l="${r}-${c}"]`);if(sp)sp.textContent=v;}
+function withPeriod(txt){const t=(txt||'').trim();if(!t)return'';return t.endsWith('.')?t:t+'.';}
+
+function partialRender(){
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const el=document.querySelector(`.cell[data-pos="${r}-${c}"]`);if(!el)continue;
+    const blk=grid[r][c],isSel=selR===r&&selC===c;
+    const inClue=activeClueKey&&clues[activeClueKey]&&clues[activeClueKey].cells.some(([cr,cc])=>cr===r&&cc===c);
+    el.className='cell'+(blk?' black':isSel?' active-cell':inClue?' highlight':'');
+  }
+  const dp=document.getElementById('dir-pill');
+  if(dp){
+    dp.innerHTML=selR!==null?`<i class="ti ${curDir==='H'?'ti-arrow-right':'ti-arrow-down'}"></i> ${curDir==='H'?'Horizontal':'Vertical'}`:`<i class="ti ti-arrows-cross"></i> —`;
+    dp.style.opacity=selR!==null?'1':'.3';
+  }
+  const ci=document.getElementById('clues-inner');
+  if(ci){ci.innerHTML=buildCluesHTML();restoreClueInputs();}
+}
+
+function buildCluesHTML(){
+  const keys=Object.keys(clues);
+  if(!keys.length)return`<p class="hint-text">Clica numa célula para selecionar. <kbd>Espaço</kbd> = célula preta.</p>`;
+  const hK=keys.filter(k=>k.includes('H'));
+  const vK=keys.filter(k=>k.includes('V'));
+  function renderGroup(gKeys){
+    return gKeys.map(k=>{
+      const cl=clues[k],isA=k===activeClueKey,v=clueInputs[k]||'';
+      return `<div class="clue-item"><span class="clue-tag${isA?' active-tag':''}" onclick="clickClueTag('${k}')">${k}</span><textarea class="clue-input" data-key="${k}" placeholder="Definição ${cl.length}L...">${v}</textarea><span class="clue-len">${cl.length}L</span></div>`;
+    }).join('');
+  }
+  function groupAndRender(ks){
+    const g={};ks.forEach(k=>{const b=groupKey(k);if(!g[b])g[b]=[];g[b].push(k);});
+    return Object.values(g).map(gr=>`<div class="clue-row-group">${renderGroup(gr)}</div>`).join('');
+  }
+  let h='';
+  if(hK.length)h+=`<div class="clues-section-label">Horizontal</div>${groupAndRender(hK)}`;
+  if(vK.length)h+=`<div class="clues-section-label section-gap">Vertical</div>${groupAndRender(vK)}`;
+  return h;
+}
+
+function restoreClueInputs(){
+  document.querySelectorAll('.clue-input').forEach(el=>{
+    const k=el.dataset.key;
+    if(!k) return;
+    // Restore value from JS variable
+    if(clueInputs[k]) el.value=clueInputs[k];
+    // Keep JS variable in sync on every keystroke
+    el.oninput=function(){clueInputs[k]=this.value;};
+    el.onchange=function(){clueInputs[k]=this.value;};
+  });
+}
+
+function clickClueTag(k){
+  activeClueKey=k;
+  if(clues[k]){const[r,c]=clues[k].cells[0];selR=r;selC=c;curDir=clues[k].direction;partialRender();focusInput(r,c);}
+}
+
+// ── Supabase ──
+const SUPA_URL='https://tqlcqsuraqhpdwrqbpoh.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbGNxc3VyYXFocGR3cnFicG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDUzNDUsImV4cCI6MjA5MzQ4MTM0NX0.Vn3YuXVsZPql_YGPjxR-IM5CVlI_6DeojivxMp92GDQ';
+const HEADERS={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+
+async function dbSave(){
+  saveCreatorClues();
+  const body={
+    id:puzzleNum,
+    grid,solutions,
+    clue_inputs:clueInputs,
+    creator_approved:creatorApproved,
+    solver_grid:null,
+    solver_notes:'',
+    solver_approved:false
+  };
+  const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas`,{
+    method:'POST',
+    headers:{...HEADERS,'Prefer':'resolution=merge-duplicates'},
+    body:JSON.stringify(body)
+  });
+  if(res.ok){showToast('Guardado na base de dados ✓');}
+  else{const e=await res.text();alert('Erro ao guardar: '+e);}
+}
+
+async function dbLoad(){
+  const id=puzzleNum.trim();
+  const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?id=eq.${encodeURIComponent(id)}&select=*`,{headers:HEADERS});
+  if(!res.ok){alert('Erro ao carregar.');return;}
+  const rows=await res.json();
+  if(!rows.length){alert(`Puzzle #${id} não encontrado.`);return;}
+  const row=rows[0];
+  grid=row.grid;
+  solutions=row.solutions;
+  clueInputs=row.clue_inputs||{};
+  creatorApproved=row.creator_approved||false;
+  solverApproved=row.solver_approved||false;
+  solverNotes=row.solver_notes||'';
+  clues=computeClues();selR=null;selC=null;activeClueKey=null;
+  fullRender();
+  showToast('Puzzle carregado ✓');
+}
+
+async function approveCreator(){
+  saveCreatorClues();
+  const missing=Object.keys(clues).filter(k=>!clueInputs[k]||!clueInputs[k].trim());
+  if(missing.length){alert(`Faltam definições: ${missing.join(', ')}`);return;}
+  creatorApproved=true;
+  await dbSave();
+  fullRender();
+}
+
+async function saveState(){await dbSave();}
+
+async function loadState(){await dbLoad();}
+
+function startCreatorEdit(){creatorApproved=false;selR=null;selC=null;activeClueKey=null;fullRender();}
+
+function saveCreatorClues(){document.querySelectorAll('.clue-input').forEach(el=>{const k=el.dataset.key;if(k&&el.value)clueInputs[k]=el.value;});}
+
+// Poll for solver updates every 10s when creator is approved
+let pollInterval=null;
+function startPolling(){
+  if(pollInterval) return;
+  pollInterval=setInterval(async()=>{
+    if(!creatorApproved) return;
+    const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?id=eq.${encodeURIComponent(puzzleNum)}&select=solver_approved,solver_notes`,{headers:HEADERS});
+    if(!res.ok) return;
+    const rows=await res.json();
+    if(!rows.length) return;
+    const row=rows[0];
+    if(row.solver_approved&&!solverApproved){
+      solverApproved=true;
+      solverNotes=row.solver_notes||'';
+      fullRender();
+      showToast('Revisor aprovou o puzzle! ✓');
+    } else if(row.solver_approved){
+      solverNotes=row.solver_notes||'';
+    }
+  },10000);
+}
+startPolling();
+
+function showToast(msg){
+  const t=document.getElementById('copy-toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── Canvas renderer ──
+function renderGridToCanvas(showSolutions){
+  const CELL=44,BORDER=2,PAD=32,LABEL=24;
+  const size=N*CELL+BORDER*2;
+  const W=PAD+LABEL+size+PAD, H=PAD+LABEL+size+PAD+24;
+  const cv=document.getElementById('off-canvas');
+  cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
+
+  const ox=PAD+LABEL, oy=PAD+LABEL;
+
+  // col numbers
+  ctx.fillStyle='#6b6b68';ctx.font='bold 13px Inter,sans-serif';ctx.textAlign='center';
+  for(let c=0;c<N;c++) ctx.fillText(c+1,ox+BORDER+c*CELL+CELL/2,oy-6);
+  // row numbers
+  ctx.textAlign='right';
+  for(let r=0;r<N;r++) ctx.fillText(r+1,ox-6,oy+BORDER+r*CELL+CELL/2+5);
+
+  // outer border
+  ctx.strokeStyle='#1a1a18';ctx.lineWidth=BORDER;
+  ctx.strokeRect(ox,oy,N*CELL+BORDER,N*CELL+BORDER);
+
+  // cells
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const x=ox+BORDER+c*CELL, y=oy+BORDER+r*CELL;
+    if(grid[r][c]){
+      ctx.fillStyle='#1a1a18';ctx.fillRect(x,y,CELL,CELL);
+    } else {
+      ctx.fillStyle='#ffffff';ctx.fillRect(x,y,CELL,CELL);
+      ctx.strokeStyle='#d3d1c7';ctx.lineWidth=0.5;ctx.strokeRect(x,y,CELL,CELL);
+      if(showSolutions&&solutions[r][c]){
+        ctx.fillStyle='#1a1a18';ctx.font='bold 18px Inter,sans-serif';ctx.textAlign='center';
+        ctx.fillText(solutions[r][c].toUpperCase(),x+CELL/2,y+CELL/2+7);
+      }
+    }
+  }
+
+  // puzzle number
+  ctx.fillStyle='#b0afa9';ctx.font='500 11px Inter,sans-serif';ctx.textAlign='left';
+  ctx.fillText(`Palavras Cruzadas #${puzzleNum}`,ox,oy+N*CELL+BORDER+18);
+
+  return cv;
+}
+
+function renderCluesCanvas(){
+  saveCreatorClues();
+  const keys=Object.keys(clues);
+  if(!keys.length)return null;
+  const hK=keys.filter(k=>k.includes('H'));
+  const vK=keys.filter(k=>k.includes('V'));
+
+  function buildGroups(ks){
+    const g={};ks.forEach(k=>{const b=groupKey(k);if(!g[b])g[b]=[];g[b].push(k);});
+    return Object.entries(g).map(([base,gKeys])=>{
+      const line=gKeys.map(k=>withPeriod(clueInputs[k])||`(${clues[k].length}L).`).join(' ');
+      return {base,line};
+    });
+  }
+
+  const hGroups=buildGroups(hK);
+  const vGroups=buildGroups(vK);
+
+  const W=640,PAD=28,COL_W=60,FONT_SIZE=13,LINE_H=20,SECTION_GAP=18,TITLE_H=24;
+  const cv=document.getElementById('off-canvas');
+  const ctx=cv.getContext('2d');
+
+  // measure height first
+  ctx.font=`${FONT_SIZE}px Inter,sans-serif`;
+  function wrapText(text,maxW){
+    const words=text.split(' ');const lines=[];let cur='';
+    for(const w of words){const test=cur?cur+' '+w:w;if(ctx.measureText(test).width>maxW&&cur){lines.push(cur);cur=w;}else cur=test;}
+    if(cur)lines.push(cur);return lines;
+  }
+  const textW=W-PAD*2-COL_W-8;
+  function measureGroups(groups){
+    let h=TITLE_H;
+    for(const {line} of groups){const wrapped=wrapText(line,textW);h+=Math.max(LINE_H,wrapped.length*LINE_H)+4;}
+    return h;
+  }
+  const totalH=PAD+measureGroups(hGroups)+SECTION_GAP+measureGroups(vGroups)+PAD;
+
+  cv.width=W;cv.height=totalH;
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,totalH);
+
+  let y=PAD;
+  function drawSection(label,groups){
+    ctx.fillStyle='#b0afa9';ctx.font='600 10px Inter,sans-serif';ctx.textAlign='left';
+    ctx.fillText(label.toUpperCase(),PAD,y+10);
+    ctx.strokeStyle='#e2e0db';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD,y+14);ctx.lineTo(W-PAD,y+14);ctx.stroke();
+    y+=TITLE_H;
+    for(const {base,line} of groups){
+      ctx.fillStyle='#185FA5';ctx.font='700 11px Inter,sans-serif';ctx.textAlign='left';
+      ctx.fillText(base,PAD,y+FONT_SIZE);
+      const wrapped=wrapText(line,textW);
+      ctx.fillStyle='#1a1a18';ctx.font=`${FONT_SIZE}px Inter,sans-serif`;
+      wrapped.forEach((wl,i)=>ctx.fillText(wl,PAD+COL_W,y+FONT_SIZE+i*LINE_H));
+      y+=Math.max(LINE_H,wrapped.length*LINE_H)+4;
+    }
+  }
+
+  drawSection('Horizontal',hGroups);
+  y+=SECTION_GAP;
+  drawSection('Vertical',vGroups);
+
+  return cv;
+}
+
+async function copyForMessenger(){
+  saveCreatorClues();
+  // Build clue text
+  const keys=Object.keys(clues);
+  const hK=keys.filter(k=>k.includes('H'));
+  const vK=keys.filter(k=>k.includes('V'));
+  function groupLines(ks){
+    const g={};ks.forEach(k=>{const b=groupKey(k);if(!g[b])g[b]=[];g[b].push(k);});
+    return Object.entries(g).map(([base,gKeys])=>base+' '+gKeys.map(k=>withPeriod(clueInputs[k])||'—.').join(' ')).join('\n');
+  }
+  const clueText=`Palavras Cruzadas #${puzzleNum}\n\nHorizontal:\n${groupLines(hK)}\n\nVertical:\n${groupLines(vK)}`;
+
+  // Render grid to canvas (no solutions)
+  const cv=renderGridToCanvas(false);
+  try{
+    cv.toBlob(async blob=>{
+      try{
+        await navigator.clipboard.write([new ClipboardItem({'image/png':blob,'text/plain':new Blob([clueText],{type:'text/plain'})})]);
+        showToast('Copiado — cola no Signal ou Messenger');
+      } catch(e){
+        // fallback: just copy text
+        await navigator.clipboard.writeText(clueText);
+        showToast('Texto copiado (imagem não suportada neste browser)');
+      }
+    },'image/png');
+  } catch(e){
+    await navigator.clipboard.writeText(clueText);
+    showToast('Texto copiado');
+  }
+}
+
+function saveGridImage(){
+  const cv=renderGridToCanvas(false);
+  const a=document.createElement('a');
+  a.download=`palavras_cruzadas_${puzzleNum}_grelha.png`;
+  a.href=cv.toDataURL('image/png');a.click();
+}
+
+function saveCluesImage(){
+  const cv=renderCluesCanvas();
+  if(!cv){alert('Sem definições para exportar.');return;}
+  const a=document.createElement('a');
+  a.download=`palavras_cruzadas_${puzzleNum}_definicoes.png`;
+  a.href=cv.toDataURL('image/png');a.click();
+}
+
+function shareWithSolver(){
+  // Build the revisor URL with the puzzle ID as a query param
+  const base=window.location.href.replace('criador.html','revisor.html');
+  const url=`${base}?id=${encodeURIComponent(puzzleNum)}`;
+  navigator.clipboard.writeText(url)
+    .then(()=>showToast('Link copiado — envia ao revisor'))
+    .catch(()=>prompt('Copia este link e envia ao revisor:',url));
+}
+
+function fullRender(){
+  // Flush any live textarea values to JS variable before re-rendering
+  saveCreatorClues();
+  clues=computeClues();
+  const themeIcon=isDark?'ti-sun':'ti-moon';
+
+  let colL='<div class="grid-col-labels">';
+  for(let c=1;c<=N;c++) colL+=`<div class="col-label">${c}</div>`;
+  colL+='</div>';
+  let rowL='<div class="grid-row-labels">';
+  for(let r=1;r<=N;r++) rowL+=`<div class="row-label">${r}</div>`;
+  rowL+='</div>';
+
+  let gHtml='<div class="grid-wrap">';
+  for(let r=0;r<N;r++){
+    gHtml+='<div class="cell-row">';
+    for(let c=0;c<N;c++){
+      const blk=grid[r][c],isSel=selR===r&&selC===c;
+      const inClue=activeClueKey&&clues[activeClueKey]&&clues[activeClueKey].cells.some(([cr,cc])=>cr===r&&cc===c);
+      const cls='cell'+(blk?' black':isSel?' active-cell':inClue?' highlight':'');
+      let inner='';
+      if(!blk){
+        inner=`<span class="cell-letter" data-l="${r}-${c}">${solutions[r][c]||''}</span><input class="cell-input" data-cell="${r}-${c}" maxlength="1" autocomplete="off" autocorrect="off" spellcheck="false" onclick="onCellClick(${r},${c})" oninput="onInput(event,${r},${c})" onkeydown="onKeyDown(event,${r},${c})">`;
+      } else {
+        inner=`<input class="cell-input" style="cursor:pointer" onclick="onCellClick(${r},${c})">`;
+      }
+      gHtml+=`<div class="${cls}" data-pos="${r}-${c}">${inner}</div>`;
+    }
+    gHtml+='</div>';
+  }
+  gHtml+='</div>';
+
+  const dirPill=`<span class="dir-pill" id="dir-pill" style="opacity:${selR!==null?1:.3}"><i class="ti ${selR!==null&&curDir==='V'?'ti-arrow-down':'ti-arrows-cross'}"></i> ${selR!==null?(curDir==='H'?'Horizontal':'Vertical'):'—'}</span>`;
+
+  const gridBottom=solverApproved
+    ?`<div class="notes-wrap"><div class="notes-label"><i class="ti ti-notes" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Notas do Revisor</div><div class="notes-readonly">${solverNotes?solverNotes.replace(/</g,'&lt;'):'<span style="color:var(--text-3);font-style:italic">Sem notas do revisor.</span>'}</div></div>`
+    :'';
+
+  let actHtml='';
+  if(!creatorApproved){
+    actHtml=`
+      <button class="btn" onclick="saveState()"><i class="ti ti-device-floppy"></i> Guardar</button>
+      <button class="btn" onclick="loadState()"><i class="ti ti-folder-open"></i> Carregar</button>
+      <span class="hint-text">Clica=selecionar · clica de novo=direção · <kbd>Espaço</kbd>=preta</span>
+      <div class="actions-right">
+        <button class="btn primary" onclick="approveCreator()"><i class="ti ti-check"></i> Aprovar</button>
+      </div>`;
+  } else {
+    actHtml=`
+      <span class="approved-pill"><i class="ti ti-check"></i> Aprovado</span>
+      ${solverApproved?'<span class="approved-pill"><i class="ti ti-user-check"></i> Revisor aprovou</span>':''}
+      <button class="btn" onclick="startCreatorEdit()"><i class="ti ti-edit"></i> Editar</button>
+      <button class="btn" onclick="saveState()"><i class="ti ti-device-floppy"></i> Guardar</button>
+      <div class="actions-right">
+        <button class="btn" onclick="copyForMessenger()"><i class="ti ti-copy"></i> Copiar</button>
+        <button class="btn" onclick="shareWithSolver()"><i class="ti ti-share"></i> Partilhar com Revisor</button>
+        <button class="btn" onclick="saveGridImage()"><i class="ti ti-photo-down"></i> Grelha</button>
+        <button class="btn" onclick="saveCluesImage()"><i class="ti ti-file-download"></i> Definições</button>
+      </div>`;
+  }
+
+  const solverBanner=solverApproved
+    ?`<div class="solver-banner"><i class="ti ti-circle-check"></i><span>Puzzle aprovado pelo revisor</span></div>`
+    :'';
+
+  document.getElementById('app').innerHTML=`
+    <div class="header">
+      <span class="app-title">Palavras Cruzadas</span>
+      <span class="app-role">Criador</span>
+      <div class="puzzle-num-wrap"><span class="puzzle-num-label">#</span><input class="puzzle-num-input" type="text" value="${puzzleNum}" onchange="puzzleNum=this.value"></div>
+      ${dirPill}
+      <div class="header-right">
+        <button class="icon-btn" onclick="toggleDark()" title="Alternar tema"><i class="ti ${themeIcon}"></i></button>
+      </div>
+    </div>
+    <div class="main">
+      <div class="grid-panel">
+        <div class="grid-container">${colL}${rowL}${gHtml}</div>
+        ${gridBottom}
+      </div>
+      <div class="clues-panel">
+        ${solverBanner}
+        <div class="clues-section-label" style="margin-bottom:12px">Definições</div>
+        <div id="clues-inner">${buildCluesHTML()}</div>
+      </div>
+    </div>
+    <div class="actions">${actHtml}</div>
+  `;
+
+  restoreClueInputs();
+}
+
+clues=computeClues();
+fullRender();
+</script>
+</body>
+</html>
