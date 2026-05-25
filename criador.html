@@ -384,11 +384,44 @@ async function saveState(){await dbSave();}
 
 async function loadState(){await dbLoad();}
 
-function startCreatorEdit(){creatorApproved=false;selR=null;selC=null;activeClueKey=null;fullRender();}
+async function startCreatorEdit(){
+  creatorApproved=false;
+  solverApproved=false;
+  solverStatus=null;
+  solverNotes='';
+  solverGrid=null;
+  selR=null;selC=null;activeClueKey=null;
+  // Save the reset state so revisor sees it's back in editing
+  await dbSave();
+  fullRender();
+}
 
 function saveCreatorClues(){document.querySelectorAll('.clue-input').forEach(el=>{const k=el.dataset.key;if(k&&el.value)clueInputs[k]=el.value;});}
 
-// Poll for solver updates every 10s when creator is approved
+async function newPuzzle(){
+  if(!confirm('Começar um novo puzzle? O atual ficará guardado na base de dados.')) return;
+  // Fetch highest existing puzzle ID from Supabase
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?select=id&order=id.desc&limit=1`,{headers:HEADERS});
+    const rows=await res.json();
+    let nextNum=1;
+    if(rows&&rows.length){
+      const last=parseInt(rows[0].id)||0;
+      nextNum=last+1;
+    }
+    puzzleNum=String(nextNum).padStart(3,'0');
+  } catch(e){
+    const num=parseInt(puzzleNum)||0;
+    puzzleNum=String(num+1).padStart(3,'0');
+  }
+  grid=Array.from({length:N},()=>Array(N).fill(false));
+  solutions=Array.from({length:N},()=>Array(N).fill(''));
+  clues={};clueInputs={};creatorApproved=false;solverApproved=false;
+  solverNotes='';solverGrid=null;solverStatus=null;
+  activeClueKey=null;selR=null;selC=null;curDir='H';
+  clues=computeClues();
+  fullRender();
+}
 let pollInterval=null;
 function startPolling(){
   if(pollInterval) return;
@@ -755,21 +788,20 @@ function fullRender(){
   restoreClueInputs();
 }
 
-function newPuzzle(){
-  if(!confirm('Começar um novo puzzle? O atual ficará guardado na base de dados.')) return;
-  // increment puzzle number
-  const num=parseInt(puzzleNum)||0;
-  puzzleNum=String(num+1).padStart(3,'0');
-  grid=Array.from({length:N},()=>Array(N).fill(false));
-  solutions=Array.from({length:N},()=>Array(N).fill(''));
-  clues={};clueInputs={};creatorApproved=false;solverApproved=false;
-  solverNotes='';activeClueKey=null;selR=null;selC=null;curDir='H';
-  clues=computeClues();
-  fullRender();
-}
-
 clues=computeClues();
-fullRender();
+// Auto-load highest puzzle or start fresh
+(async()=>{
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?select=id&order=id.desc&limit=1`,{headers:HEADERS});
+    const rows=await res.json();
+    if(rows&&rows.length){
+      puzzleNum=rows[0].id;
+      await dbLoad();
+    } else {
+      fullRender();
+    }
+  } catch(e){ fullRender(); }
+})();
 </script>
 </body>
 </html>
