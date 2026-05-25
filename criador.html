@@ -526,17 +526,39 @@ function renderGridToCanvas(showSolutions){
   // outer border
   ctx.strokeStyle='#1a1a18';ctx.lineWidth=BORDER;
   ctx.strokeRect(ox,oy,N*CELL+BORDER,N*CELL+BORDER);
-  // cells
+  // Pass 1: fill all white cells
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
-    const x=ox+BORDER+c*CELL,y=oy+BORDER+r*CELL;
-    if(grid[r][c]){
-      // Black cell: fill solid, no stroke (avoids white border artefact)
-      ctx.fillStyle='#1a1a18';
-      ctx.fillRect(x,y,CELL,CELL);
-    } else {
+    if(!grid[r][c]){
+      const x=ox+BORDER+c*CELL,y=oy+BORDER+r*CELL;
       ctx.fillStyle='#ffffff';ctx.fillRect(x,y,CELL,CELL);
-      ctx.strokeStyle='#cccccc';ctx.lineWidth=0.5;ctx.strokeRect(x+0.25,y+0.25,CELL-0.5,CELL-0.5);
-      if(showSolutions&&solutions[r][c]){
+    }
+  }
+  // Pass 2: draw grid lines across entire grid (uniform, no per-cell stroke)
+  ctx.strokeStyle='#cccccc';ctx.lineWidth=0.5;
+  for(let r=0;r<=N;r++){
+    ctx.beginPath();
+    ctx.moveTo(ox+BORDER,oy+BORDER+r*CELL);
+    ctx.lineTo(ox+BORDER+N*CELL,oy+BORDER+r*CELL);
+    ctx.stroke();
+  }
+  for(let c=0;c<=N;c++){
+    ctx.beginPath();
+    ctx.moveTo(ox+BORDER+c*CELL,oy+BORDER);
+    ctx.lineTo(ox+BORDER+c*CELL,oy+BORDER+N*CELL);
+    ctx.stroke();
+  }
+  // Pass 3: fill black cells on top — covers any grid lines
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    if(grid[r][c]){
+      const x=ox+BORDER+c*CELL,y=oy+BORDER+r*CELL;
+      ctx.fillStyle='#1a1a18';ctx.fillRect(x,y,CELL,CELL);
+    }
+  }
+  // Pass 4: letters on white cells (if showing solutions)
+  if(showSolutions){
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+      if(!grid[r][c]&&solutions[r][c]){
+        const x=ox+BORDER+c*CELL,y=oy+BORDER+r*CELL;
         ctx.fillStyle='#1a1a18';ctx.font='bold 20px sans-serif';ctx.textAlign='center';
         ctx.fillText(solutions[r][c].toUpperCase(),x+CELL/2,y+CELL/2+8);
       }
