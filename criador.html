@@ -123,7 +123,6 @@ html.dark .cell.solver-empty{background:#2e2410;}
 <body>
 <div id="app"></div>
 <div class="copy-toast" id="copy-toast">Copiado para a área de transferência</div>
-<canvas id="off-canvas" style="display:none"></canvas>
 <script>
 const N=10;
 let isDark=false;
@@ -498,47 +497,46 @@ function showToast(msg){
 }
 
 // ── Canvas renderer ──
+function makeCanvas(w,h){
+  const cv=document.createElement('canvas');
+  cv.width=w;cv.height=h;
+  return cv;
+}
+
 function renderGridToCanvas(showSolutions){
   const CELL=44,BORDER=2,PAD=32,LABEL=24;
-  const size=N*CELL+BORDER*2;
-  const W=PAD+LABEL+size+PAD, H=PAD+LABEL+size+PAD+24;
-  const cv=document.getElementById('off-canvas');
-  cv.width=W;cv.height=H;
+  const W=PAD+LABEL+N*CELL+BORDER*2+PAD;
+  const H=PAD+LABEL+N*CELL+BORDER*2+PAD+24;
+  const cv=makeCanvas(W,H);
   const ctx=cv.getContext('2d');
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
-
-  const ox=PAD+LABEL, oy=PAD+LABEL;
-
+  const ox=PAD+LABEL,oy=PAD+LABEL;
   // col numbers
-  ctx.fillStyle='#6b6b68';ctx.font='bold 13px Inter,sans-serif';ctx.textAlign='center';
+  ctx.fillStyle='#6b6b68';ctx.font='bold 13px sans-serif';ctx.textAlign='center';
   for(let c=0;c<N;c++) ctx.fillText(c+1,ox+BORDER+c*CELL+CELL/2,oy-6);
   // row numbers
   ctx.textAlign='right';
   for(let r=0;r<N;r++) ctx.fillText(r+1,ox-6,oy+BORDER+r*CELL+CELL/2+5);
-
   // outer border
   ctx.strokeStyle='#1a1a18';ctx.lineWidth=BORDER;
   ctx.strokeRect(ox,oy,N*CELL+BORDER,N*CELL+BORDER);
-
   // cells
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
-    const x=ox+BORDER+c*CELL, y=oy+BORDER+r*CELL;
+    const x=ox+BORDER+c*CELL,y=oy+BORDER+r*CELL;
     if(grid[r][c]){
       ctx.fillStyle='#1a1a18';ctx.fillRect(x,y,CELL,CELL);
     } else {
       ctx.fillStyle='#ffffff';ctx.fillRect(x,y,CELL,CELL);
       ctx.strokeStyle='#d3d1c7';ctx.lineWidth=0.5;ctx.strokeRect(x,y,CELL,CELL);
       if(showSolutions&&solutions[r][c]){
-        ctx.fillStyle='#1a1a18';ctx.font='bold 18px Inter,sans-serif';ctx.textAlign='center';
+        ctx.fillStyle='#1a1a18';ctx.font='bold 18px sans-serif';ctx.textAlign='center';
         ctx.fillText(solutions[r][c].toUpperCase(),x+CELL/2,y+CELL/2+7);
       }
     }
   }
-
   // puzzle number
-  ctx.fillStyle='#b0afa9';ctx.font='500 11px Inter,sans-serif';ctx.textAlign='left';
+  ctx.fillStyle='#b0afa9';ctx.font='11px sans-serif';ctx.textAlign='left';
   ctx.fillText(`Palavras Cruzadas #${puzzleNum}`,ox,oy+N*CELL+BORDER+18);
-
   return cv;
 }
 
@@ -548,90 +546,72 @@ function renderCluesCanvas(){
   if(!keys.length)return null;
   const hK=keys.filter(k=>k.includes('H'));
   const vK=keys.filter(k=>k.includes('V'));
-
   function buildGroups(ks){
     const g={};ks.forEach(k=>{const b=groupKey(k);if(!g[b])g[b]=[];g[b].push(k);});
-    return Object.entries(g).map(([base,gKeys])=>{
-      const line=gKeys.map(k=>withPeriod(clueInputs[k])||`(${clues[k].length}L).`).join(' ');
-      return {base,line};
-    });
+    return Object.entries(g).map(([base,gKeys])=>({base,line:gKeys.map(k=>withPeriod(clueInputs[k])||`(${clues[k].length}L).`).join(' ')}));
   }
-
   const hGroups=buildGroups(hK);
   const vGroups=buildGroups(vK);
-
   const W=640,PAD=28,COL_W=60,FONT_SIZE=13,LINE_H=20,SECTION_GAP=18,TITLE_H=24;
-  const cv=document.getElementById('off-canvas');
-  const ctx=cv.getContext('2d');
-
-  // measure height first
-  ctx.font=`${FONT_SIZE}px Inter,sans-serif`;
-  function wrapText(text,maxW){
+  // Use a temp canvas just for text measurement
+  const tmp=makeCanvas(W,100);
+  const tctx=tmp.getContext('2d');
+  tctx.font=`${FONT_SIZE}px sans-serif`;
+  const textW=W-PAD*2-COL_W-8;
+  function wrapText(ctx,text,maxW){
     const words=text.split(' ');const lines=[];let cur='';
     for(const w of words){const test=cur?cur+' '+w:w;if(ctx.measureText(test).width>maxW&&cur){lines.push(cur);cur=w;}else cur=test;}
     if(cur)lines.push(cur);return lines;
   }
-  const textW=W-PAD*2-COL_W-8;
   function measureGroups(groups){
     let h=TITLE_H;
-    for(const {line} of groups){const wrapped=wrapText(line,textW);h+=Math.max(LINE_H,wrapped.length*LINE_H)+4;}
+    for(const {line} of groups){h+=Math.max(LINE_H,wrapText(tctx,line,textW).length*LINE_H)+4;}
     return h;
   }
   const totalH=PAD+measureGroups(hGroups)+SECTION_GAP+measureGroups(vGroups)+PAD;
-
-  cv.width=W;cv.height=totalH;
+  const cv=makeCanvas(W,totalH);
+  const ctx=cv.getContext('2d');
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,totalH);
-
   let y=PAD;
   function drawSection(label,groups){
-    ctx.fillStyle='#b0afa9';ctx.font='600 10px Inter,sans-serif';ctx.textAlign='left';
+    ctx.fillStyle='#b0afa9';ctx.font='600 10px sans-serif';ctx.textAlign='left';
     ctx.fillText(label.toUpperCase(),PAD,y+10);
     ctx.strokeStyle='#e2e0db';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(PAD,y+14);ctx.lineTo(W-PAD,y+14);ctx.stroke();
     y+=TITLE_H;
     for(const {base,line} of groups){
-      ctx.fillStyle='#185FA5';ctx.font='700 11px Inter,sans-serif';ctx.textAlign='left';
+      ctx.fillStyle='#185FA5';ctx.font='700 11px sans-serif';ctx.textAlign='left';
       ctx.fillText(base,PAD,y+FONT_SIZE);
-      const wrapped=wrapText(line,textW);
-      ctx.fillStyle='#1a1a18';ctx.font=`${FONT_SIZE}px Inter,sans-serif`;
+      const wrapped=wrapText(ctx,line,textW);
+      ctx.fillStyle='#1a1a18';ctx.font=`${FONT_SIZE}px sans-serif`;
       wrapped.forEach((wl,i)=>ctx.fillText(wl,PAD+COL_W,y+FONT_SIZE+i*LINE_H));
       y+=Math.max(LINE_H,wrapped.length*LINE_H)+4;
     }
   }
-
   drawSection('Horizontal',hGroups);
   y+=SECTION_GAP;
   drawSection('Vertical',vGroups);
-
   return cv;
 }
 
 async function copyForMessenger(){
   saveCreatorClues();
-  // Render grid canvas
   const gridCv=renderGridToCanvas(false);
-  // Render clues canvas
   const cluesCv=renderCluesCanvas();
-
-  // Combine both into one tall canvas: grid on top, clues below
-  const combined=document.getElementById('off-canvas');
+  // Combine into one tall canvas
   const PAD=20;
-  const totalW=Math.max(gridCv.width, cluesCv?cluesCv.width:0);
-  const totalH=gridCv.height + (cluesCv?cluesCv.height+PAD:0);
-  combined.width=totalW;
-  combined.height=totalH;
+  const totalW=Math.max(gridCv.width,cluesCv?cluesCv.width:0);
+  const totalH=gridCv.height+(cluesCv?cluesCv.height+PAD:0);
+  const combined=makeCanvas(totalW,totalH);
   const ctx=combined.getContext('2d');
-  ctx.fillStyle='#ffffff';
-  ctx.fillRect(0,0,totalW,totalH);
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,totalW,totalH);
   ctx.drawImage(gridCv,0,0);
   if(cluesCv) ctx.drawImage(cluesCv,0,gridCv.height+PAD);
-
   combined.toBlob(async blob=>{
     try{
       await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
       showToast('Imagem copiada — cola no Signal ou Messenger');
     } catch(e){
-      // Fallback: download the combined image
       const a=document.createElement('a');
       a.download=`palavras_cruzadas_${puzzleNum}_partilhar.png`;
       a.href=combined.toDataURL('image/png');
