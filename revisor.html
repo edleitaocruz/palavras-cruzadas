@@ -181,11 +181,13 @@ function onKeyDown(e,r,c){
   if(e.key==='Backspace'){
     e.preventDefault();
     if(solverGrid[r][c]){
+      // cell has a letter: erase it, stay
       solverGrid[r][c]='';solverStatus=null;
       updateLetterSpan(r,c,'');partialRender();focusInput(r,c);
     } else {
+      // cell empty: just move back, don't erase
       retreat();
-      if(selR!==null){solverGrid[selR][selC]='';solverStatus=null;updateLetterSpan(selR,selC,'');partialRender();focusInput(selR,selC);}
+      if(selR!==null){partialRender();focusInput(selR,selC);}
     }
     return;
   }
@@ -263,21 +265,27 @@ function buildCluesHTML(){
 function clickClueTag(k){
   activeClueKey=k;
   if(clues[k]){const[r,c]=clues[k].cells[0];selR=r;selC=c;curDir=clues[k].direction;partialRender();focusInput(r,c);}
-  // Smart notes: click label → insert/jump to note line, focus and scroll
+  // Smart notes: click label → insert/jump to note line, focus textarea after cell focus settles
   const ta=document.getElementById('solver-notes-input');
   if(!ta)return;
   const prefix=k+' — ';
   const lines=ta.value.split('\n');
   const existingIdx=lines.findIndex(l=>l.startsWith(k+' —')||l.startsWith(k+' -'));
+  let targetPos;
   if(existingIdx!==-1){
-    const pos=lines.slice(0,existingIdx).join('\n').length+(existingIdx>0?1:0)+lines[existingIdx].length;
-    ta.focus();ta.setSelectionRange(pos,pos);
+    targetPos=lines.slice(0,existingIdx).join('\n').length+(existingIdx>0?1:0)+lines[existingIdx].length;
   } else {
     const sep=ta.value.length>0&&!ta.value.endsWith('\n')?'\n':'';
-    ta.value=ta.value+sep+prefix;solverNotes=ta.value;
-    ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+    ta.value=ta.value+sep+prefix;
+    solverNotes=ta.value;
+    targetPos=ta.value.length;
   }
-  ta.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // Delay so cell focusInput() fires first, then we take focus back
+  setTimeout(()=>{
+    ta.scrollIntoView({behavior:'smooth',block:'nearest'});
+    ta.focus();
+    ta.setSelectionRange(targetPos,targetPos);
+  },80);
 }
 
 function renderStatusBadge(){

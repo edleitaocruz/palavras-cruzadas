@@ -218,10 +218,13 @@ function onKeyDown(e,r,c){
   }
   if(e.key==='Backspace'){
     e.preventDefault();
-    if(solutions[r][c]){solutions[r][c]='';updateLetterSpan(r,c,'');partialRender();focusInput(r,c);}
-    else{
+    if(solutions[r][c]){
+      // cell has a letter: erase it, stay
+      solutions[r][c]='';updateLetterSpan(r,c,'');partialRender();focusInput(r,c);
+    } else {
+      // cell empty: just move back, don't erase
       retreat();
-      if(selR!==null){solutions[selR][selC]='';updateLetterSpan(selR,selC,'');partialRender();focusInput(selR,selC);}
+      if(selR!==null){partialRender();focusInput(selR,selC);}
     }
     return;
   }
@@ -509,33 +512,37 @@ function renderCluesCanvas(){
 
 async function copyForMessenger(){
   saveCreatorClues();
-  // Build clue text
-  const keys=Object.keys(clues);
-  const hK=keys.filter(k=>k.includes('H'));
-  const vK=keys.filter(k=>k.includes('V'));
-  function groupLines(ks){
-    const g={};ks.forEach(k=>{const b=groupKey(k);if(!g[b])g[b]=[];g[b].push(k);});
-    return Object.entries(g).map(([base,gKeys])=>base+' '+gKeys.map(k=>withPeriod(clueInputs[k])||'—.').join(' ')).join('\n');
-  }
-  const clueText=`Palavras Cruzadas #${puzzleNum}\n\nHorizontal:\n${groupLines(hK)}\n\nVertical:\n${groupLines(vK)}`;
+  // Render grid canvas
+  const gridCv=renderGridToCanvas(false);
+  // Render clues canvas
+  const cluesCv=renderCluesCanvas();
 
-  // Render grid to canvas (no solutions)
-  const cv=renderGridToCanvas(false);
-  try{
-    cv.toBlob(async blob=>{
-      try{
-        await navigator.clipboard.write([new ClipboardItem({'image/png':blob,'text/plain':new Blob([clueText],{type:'text/plain'})})]);
-        showToast('Copiado — cola no Signal ou Messenger');
-      } catch(e){
-        // fallback: just copy text
-        await navigator.clipboard.writeText(clueText);
-        showToast('Texto copiado (imagem não suportada neste browser)');
-      }
-    },'image/png');
-  } catch(e){
-    await navigator.clipboard.writeText(clueText);
-    showToast('Texto copiado');
-  }
+  // Combine both into one tall canvas: grid on top, clues below
+  const combined=document.getElementById('off-canvas');
+  const PAD=20;
+  const totalW=Math.max(gridCv.width, cluesCv?cluesCv.width:0);
+  const totalH=gridCv.height + (cluesCv?cluesCv.height+PAD:0);
+  combined.width=totalW;
+  combined.height=totalH;
+  const ctx=combined.getContext('2d');
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,totalW,totalH);
+  ctx.drawImage(gridCv,0,0);
+  if(cluesCv) ctx.drawImage(cluesCv,0,gridCv.height+PAD);
+
+  combined.toBlob(async blob=>{
+    try{
+      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      showToast('Imagem copiada — cola no Signal ou Messenger');
+    } catch(e){
+      // Fallback: download the combined image
+      const a=document.createElement('a');
+      a.download=`palavras_cruzadas_${puzzleNum}_partilhar.png`;
+      a.href=combined.toDataURL('image/png');
+      a.click();
+      showToast('Imagem guardada — partilha o ficheiro');
+    }
+  },'image/png');
 }
 
 function saveGridImage(){
