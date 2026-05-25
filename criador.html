@@ -497,26 +497,32 @@ function showToast(msg){
 }
 
 // ── Canvas renderer ──
+const DPR=2; // render at 2x for sharp output
+
 function makeCanvas(w,h){
   const cv=document.createElement('canvas');
-  cv.width=w;cv.height=h;
+  cv.width=w*DPR;cv.height=h*DPR;
+  cv.style.width=w+'px';cv.style.height=h+'px';
+  const ctx=cv.getContext('2d');
+  ctx.scale(DPR,DPR);
   return cv;
 }
 
 function renderGridToCanvas(showSolutions){
-  const CELL=44,BORDER=2,PAD=32,LABEL=24;
+  const CELL=50,BORDER=2,PAD=36,LABEL=28;
   const W=PAD+LABEL+N*CELL+BORDER*2+PAD;
-  const H=PAD+LABEL+N*CELL+BORDER*2+PAD+24;
+  const H=PAD+LABEL+N*CELL+BORDER*2+PAD+28;
   const cv=makeCanvas(W,H);
   const ctx=cv.getContext('2d');
+  ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
   const ox=PAD+LABEL,oy=PAD+LABEL;
   // col numbers
-  ctx.fillStyle='#6b6b68';ctx.font='bold 13px sans-serif';ctx.textAlign='center';
-  for(let c=0;c<N;c++) ctx.fillText(c+1,ox+BORDER+c*CELL+CELL/2,oy-6);
+  ctx.fillStyle='#6b6b68';ctx.font='bold 15px sans-serif';ctx.textAlign='center';
+  for(let c=0;c<N;c++) ctx.fillText(c+1,ox+BORDER+c*CELL+CELL/2,oy-8);
   // row numbers
   ctx.textAlign='right';
-  for(let r=0;r<N;r++) ctx.fillText(r+1,ox-6,oy+BORDER+r*CELL+CELL/2+5);
+  for(let r=0;r<N;r++) ctx.fillText(r+1,ox-8,oy+BORDER+r*CELL+CELL/2+6);
   // outer border
   ctx.strokeStyle='#1a1a18';ctx.lineWidth=BORDER;
   ctx.strokeRect(ox,oy,N*CELL+BORDER,N*CELL+BORDER);
@@ -524,19 +530,21 @@ function renderGridToCanvas(showSolutions){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const x=ox+BORDER+c*CELL,y=oy+BORDER+r*CELL;
     if(grid[r][c]){
-      ctx.fillStyle='#1a1a18';ctx.fillRect(x,y,CELL,CELL);
+      // Black cell: fill solid, no stroke (avoids white border artefact)
+      ctx.fillStyle='#1a1a18';
+      ctx.fillRect(x,y,CELL,CELL);
     } else {
       ctx.fillStyle='#ffffff';ctx.fillRect(x,y,CELL,CELL);
-      ctx.strokeStyle='#d3d1c7';ctx.lineWidth=0.5;ctx.strokeRect(x,y,CELL,CELL);
+      ctx.strokeStyle='#cccccc';ctx.lineWidth=0.5;ctx.strokeRect(x+0.25,y+0.25,CELL-0.5,CELL-0.5);
       if(showSolutions&&solutions[r][c]){
-        ctx.fillStyle='#1a1a18';ctx.font='bold 18px sans-serif';ctx.textAlign='center';
-        ctx.fillText(solutions[r][c].toUpperCase(),x+CELL/2,y+CELL/2+7);
+        ctx.fillStyle='#1a1a18';ctx.font='bold 20px sans-serif';ctx.textAlign='center';
+        ctx.fillText(solutions[r][c].toUpperCase(),x+CELL/2,y+CELL/2+8);
       }
     }
   }
   // puzzle number
-  ctx.fillStyle='#b0afa9';ctx.font='11px sans-serif';ctx.textAlign='left';
-  ctx.fillText(`Palavras Cruzadas #${puzzleNum}`,ox,oy+N*CELL+BORDER+18);
+  ctx.fillStyle='#b0afa9';ctx.font='13px sans-serif';ctx.textAlign='left';
+  ctx.fillText(`Palavras Cruzadas #${puzzleNum}`,ox,oy+N*CELL+BORDER+22);
   return cv;
 }
 
@@ -552,40 +560,41 @@ function renderCluesCanvas(){
   }
   const hGroups=buildGroups(hK);
   const vGroups=buildGroups(vK);
-  const W=640,PAD=28,COL_W=60,FONT_SIZE=13,LINE_H=20,SECTION_GAP=18,TITLE_H=24;
-  // Use a temp canvas just for text measurement
-  const tmp=makeCanvas(W,100);
+  const W=700,PAD=32,COL_W=64,FONT_SIZE=15,LINE_H=23,SECTION_GAP=20,TITLE_H=28;
+  // Measure using a temp canvas
+  const tmp=document.createElement('canvas');
   const tctx=tmp.getContext('2d');
   tctx.font=`${FONT_SIZE}px sans-serif`;
   const textW=W-PAD*2-COL_W-8;
-  function wrapText(ctx,text,maxW){
+  function wrapText(ctx2,text,maxW){
     const words=text.split(' ');const lines=[];let cur='';
-    for(const w of words){const test=cur?cur+' '+w:w;if(ctx.measureText(test).width>maxW&&cur){lines.push(cur);cur=w;}else cur=test;}
+    for(const w of words){const test=cur?cur+' '+w:w;if(ctx2.measureText(test).width>maxW&&cur){lines.push(cur);cur=w;}else cur=test;}
     if(cur)lines.push(cur);return lines;
   }
   function measureGroups(groups){
     let h=TITLE_H;
-    for(const {line} of groups){h+=Math.max(LINE_H,wrapText(tctx,line,textW).length*LINE_H)+4;}
+    for(const {line} of groups){h+=Math.max(LINE_H,wrapText(tctx,line,textW).length*LINE_H)+6;}
     return h;
   }
   const totalH=PAD+measureGroups(hGroups)+SECTION_GAP+measureGroups(vGroups)+PAD;
   const cv=makeCanvas(W,totalH);
   const ctx=cv.getContext('2d');
+  ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,totalH);
   let y=PAD;
   function drawSection(label,groups){
-    ctx.fillStyle='#b0afa9';ctx.font='600 10px sans-serif';ctx.textAlign='left';
-    ctx.fillText(label.toUpperCase(),PAD,y+10);
-    ctx.strokeStyle='#e2e0db';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(PAD,y+14);ctx.lineTo(W-PAD,y+14);ctx.stroke();
+    ctx.fillStyle='#aaaaaa';ctx.font='600 11px sans-serif';ctx.textAlign='left';
+    ctx.fillText(label.toUpperCase(),PAD,y+12);
+    ctx.strokeStyle='#e0e0e0';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD,y+16);ctx.lineTo(W-PAD,y+16);ctx.stroke();
     y+=TITLE_H;
     for(const {base,line} of groups){
-      ctx.fillStyle='#185FA5';ctx.font='700 11px sans-serif';ctx.textAlign='left';
+      ctx.fillStyle='#185FA5';ctx.font='700 13px sans-serif';ctx.textAlign='left';
       ctx.fillText(base,PAD,y+FONT_SIZE);
       const wrapped=wrapText(ctx,line,textW);
       ctx.fillStyle='#1a1a18';ctx.font=`${FONT_SIZE}px sans-serif`;
       wrapped.forEach((wl,i)=>ctx.fillText(wl,PAD+COL_W,y+FONT_SIZE+i*LINE_H));
-      y+=Math.max(LINE_H,wrapped.length*LINE_H)+4;
+      y+=Math.max(LINE_H,wrapped.length*LINE_H)+6;
     }
   }
   drawSection('Horizontal',hGroups);
@@ -598,15 +607,18 @@ async function copyForMessenger(){
   saveCreatorClues();
   const gridCv=renderGridToCanvas(false);
   const cluesCv=renderCluesCanvas();
-  // Combine into one tall canvas
-  const PAD=20;
-  const totalW=Math.max(gridCv.width,cluesCv?cluesCv.width:0);
-  const totalH=gridCv.height+(cluesCv?cluesCv.height+PAD:0);
+  // Combine into one tall canvas (logical dimensions, not physical)
+  const GPAD=20;
+  const gW=gridCv.width/DPR, gH=gridCv.height/DPR;
+  const cW=cluesCv?cluesCv.width/DPR:0, cH=cluesCv?cluesCv.height/DPR:0;
+  const totalW=Math.max(gW,cW);
+  const totalH=gH+(cluesCv?cH+GPAD:0);
   const combined=makeCanvas(totalW,totalH);
   const ctx=combined.getContext('2d');
+  ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.fillStyle='#ffffff';ctx.fillRect(0,0,totalW,totalH);
-  ctx.drawImage(gridCv,0,0);
-  if(cluesCv) ctx.drawImage(cluesCv,0,gridCv.height+PAD);
+  ctx.drawImage(gridCv,0,0,gW,gH);
+  if(cluesCv) ctx.drawImage(cluesCv,0,gH+GPAD,cW,cH);
   combined.toBlob(async blob=>{
     try{
       await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
