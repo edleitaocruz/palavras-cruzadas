@@ -310,16 +310,15 @@ function checkSolution(){
 }
 
 function approveSolver(){
+  // Check status but never block — send whatever state exists
   let filled=true,correct=true;
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     if(!grid[r][c]){
-      if(!solverGrid[r][c])filled=false;
-      else if(solverGrid[r][c].toUpperCase()!==(window._solutions&&window._solutions[r][c]||'').toUpperCase())correct=false;
+      if(!solverGrid[r][c]) filled=false;
+      else if(solverGrid[r][c].toUpperCase()!==(window._solutions&&window._solutions[r][c]||'').toUpperCase()) correct=false;
     }
   }
-  if(!filled){solverStatus='incomplete';fullRender();alert('Palavras cruzadas incompletas. Preenche todas as células antes de aprovar.');return;}
-  if(!correct){solverStatus='wrong';fullRender();alert('Existem respostas erradas. Corrige os erros antes de aprovar.');return;}
-  solverStatus='success';
+  solverStatus=!filled?'incomplete':!correct?'wrong':'success';
   const na=document.getElementById('solver-notes-input');if(na)solverNotes=na.value;
   solverApproved=true;solverEditing=false;
   dbSaveSolver();
@@ -352,6 +351,7 @@ async function loadPuzzleById(id){
   solverGrid=row.solver_grid&&row.solver_grid.length?row.solver_grid:Array.from({length:N},()=>Array(N).fill(''));
   solverNotes=row.solver_notes||'';
   solverApproved=row.solver_approved||false;
+  solverStatus=row.solver_status||null;
   solverEditing=false;solverStatus=null;activeClueKey=null;selR=null;selC=null;
   fullRender();
   showToast('Puzzle carregado ✓');
@@ -359,7 +359,7 @@ async function loadPuzzleById(id){
 
 async function dbSaveSolver(){
   const na=document.getElementById('solver-notes-input');if(na)solverNotes=na.value;
-  const body={solver_grid:solverGrid,solver_notes:solverNotes,solver_approved:solverApproved};
+  const body={solver_grid:solverGrid,solver_notes:solverNotes,solver_approved:solverApproved,solver_status:solverStatus||''};
   const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?id=eq.${encodeURIComponent(puzzleNum)}`,{
     method:'PATCH',
     headers:{...HEADERS,'Prefer':'return=minimal'},

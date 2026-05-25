@@ -72,10 +72,15 @@ html.dark .cell.active-cell{background:#0c2a45;}
 .notes-readonly{font-family:'Inter',sans-serif;font-size:13px;line-height:1.7;border:1px solid var(--green-border);border-radius:8px;padding:12px 14px;background:var(--green-bg);color:var(--green-text);min-height:80px;width:100%;white-space:pre-wrap;}
 
 /* STAGE BANNERS */
-.stage-banner{display:flex;align-items:center;gap:10px;border-radius:8px;padding:12px 16px;margin-bottom:16px;}
+.stage-banner{display:flex;align-items:center;gap:10px;border-radius:8px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap;}
 .stage-banner.green{background:var(--green-bg);border:1px solid var(--green-border);}
-.stage-banner i{font-size:18px;color:var(--green-text);}
-.stage-banner span{font-size:13px;font-weight:600;color:var(--green-text);}
+.stage-banner.green i,.stage-banner.green span{color:var(--green-text);}
+.stage-banner.orange{background:#3a2e0a;border:1px solid #5a4610;}
+.stage-banner.orange i,.stage-banner.orange span{color:#f5c842;}
+.stage-banner.red{background:#3a1a1a;border:1px solid #5a2a2a;}
+.stage-banner.red i,.stage-banner.red span{color:#f07070;}
+.stage-banner i{font-size:18px;}
+.stage-banner span{font-size:13px;font-weight:600;}
 
 /* ACTION BAR — simplified, bigger */
 .actions{position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:10px;min-height:72px;}
@@ -103,6 +108,14 @@ html:not(.dark) .btn.primary:hover{background:#333;}
 /* autosave indicator */
 .autosave{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px;}
 
+.cell.solver-correct{background:#e8f5e9;}
+html.dark .cell.solver-correct{background:#1a2e1a;}
+.cell.solver-wrong{background:#fce8e8;}
+html.dark .cell.solver-wrong{background:#2e1a1a;}
+.cell.solver-empty{background:#fff3e0;}
+html.dark .cell.solver-empty{background:#2e2410;}
+.cell-letter.solver-ok{color:#2e7d32;}
+.cell-letter.solver-bad{color:#c62828;}
 .copy-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--text-1);color:var(--bg-base);border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;}
 .copy-toast.show{opacity:1;}
 </style>
@@ -118,7 +131,7 @@ let puzzleNum='001';
 let grid=Array.from({length:N},()=>Array(N).fill(false));
 let solutions=Array.from({length:N},()=>Array(N).fill(''));
 let clues={},clueInputs={},creatorApproved=false,solverApproved=false;
-let solverNotes='',activeClueKey=null,savedState=null;
+let solverNotes='',solverGrid=null,solverStatus=null,activeClueKey=null,savedState=null;
 let selR=null,selC=null,curDir='H';
 
 function toggleDark(){isDark=!isDark;document.documentElement.classList.toggle('dark',isDark);fullRender();}
@@ -351,6 +364,8 @@ async function dbLoad(){
   creatorApproved=row.creator_approved||false;
   solverApproved=row.solver_approved||false;
   solverNotes=row.solver_notes||'';
+  solverGrid=row.solver_grid||null;
+  solverStatus=row.solver_status||null;
   clues=computeClues();selR=null;selC=null;activeClueKey=null;
   fullRender();
   showToast('Puzzle carregado ✓');
@@ -379,7 +394,7 @@ function startPolling(){
   if(pollInterval) return;
   pollInterval=setInterval(async()=>{
     if(!creatorApproved) return;
-    const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?id=eq.${encodeURIComponent(puzzleNum)}&select=solver_approved,solver_notes`,{headers:HEADERS});
+    const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?id=eq.${encodeURIComponent(puzzleNum)}&select=solver_approved,solver_notes,solver_grid,solver_status`,{headers:HEADERS});
     if(!res.ok) return;
     const rows=await res.json();
     if(!rows.length) return;
@@ -387,10 +402,14 @@ function startPolling(){
     if(row.solver_approved&&!solverApproved){
       solverApproved=true;
       solverNotes=row.solver_notes||'';
+      solverGrid=row.solver_grid||null;
+      solverStatus=row.solver_status||null;
       fullRender();
-      showToast('Revisor aprovou o puzzle! ✓');
+      showToast('Revisor enviou o puzzle! ✓');
     } else if(row.solver_approved){
       solverNotes=row.solver_notes||'';
+      solverGrid=row.solver_grid||null;
+      solverStatus=row.solver_status||null;
     }
   },10000);
 }
@@ -612,10 +631,21 @@ function fullRender(){
     for(let c=0;c<N;c++){
       const blk=grid[r][c],isSel=selR===r&&selC===c;
       const inClue=activeClueKey&&clues[activeClueKey]&&clues[activeClueKey].cells.some(([cr,cc])=>cr===r&&cc===c);
-      const cls='cell'+(blk?' black':isSel?' active-cell':inClue?' highlight':'');
+
+      // When solver has submitted, show their answers with colour coding
+      let cellExtra='',letterClass='cell-letter',letterVal=solutions[r][c]||'';
+      if(!blk&&solverApproved&&solverGrid){
+        const sv=(solverGrid[r]&&solverGrid[r][c])||'';
+        const correct=sv.toUpperCase()===(solutions[r][c]||'').toUpperCase();
+        if(!sv){cellExtra=' solver-empty';letterVal='';}
+        else if(correct){cellExtra=' solver-correct';letterClass='cell-letter solver-ok';letterVal=sv;}
+        else{cellExtra=' solver-wrong';letterClass='cell-letter solver-bad';letterVal=sv;}
+      }
+
+      const cls='cell'+(blk?' black':isSel?' active-cell':inClue?' highlight':cellExtra);
       let inner='';
       if(!blk){
-        inner=`<span class="cell-letter" data-l="${r}-${c}">${solutions[r][c]||''}</span><input class="cell-input" data-cell="${r}-${c}" maxlength="1" autocomplete="off" autocorrect="off" spellcheck="false" onclick="onCellClick(${r},${c})" oninput="onInput(event,${r},${c})" onkeydown="onKeyDown(event,${r},${c})">`;
+        inner=`<span class="${letterClass}" data-l="${r}-${c}">${letterVal}</span><input class="cell-input" data-cell="${r}-${c}" maxlength="1" autocomplete="off" autocorrect="off" spellcheck="false" onclick="onCellClick(${r},${c})" oninput="onInput(event,${r},${c})" onkeydown="onKeyDown(event,${r},${c})">`;
       } else {
         inner=`<input class="cell-input" style="cursor:pointer" onclick="onCellClick(${r},${c})">`;
       }
@@ -661,14 +691,27 @@ function fullRender(){
       </div>`;
 
   } else {
-    // Stage 3 — solver approved
+    // Stage 3 — solver approved (success, incomplete, or wrong)
+    const statusIcon=solverStatus==='success'?'ti-circle-check':solverStatus==='incomplete'?'ti-circle-dashed':'ti-circle-x';
+    const statusMsg=solverStatus==='success'?'Revisor completou o puzzle com sucesso!':solverStatus==='incomplete'?'Revisor enviou com células em falta (laranja)':'Revisor enviou com respostas erradas (vermelho) e/ou células em falta (laranja)';
+    const bannerColor=solverStatus==='success'?'green':solverStatus==='incomplete'?'orange':'red';
+
+    const legendHtml=solverStatus!=='success'?`
+      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2)"><span style="width:14px;height:14px;border-radius:3px;background:#fff3e0;border:1px solid #e0c080;display:inline-block"></span>Célula em falta</span>
+        ${solverStatus==='wrong'?`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2)"><span style="width:14px;height:14px;border-radius:3px;background:#fce8e8;border:1px solid #e08080;display:inline-block"></span>Resposta errada</span>`:''}
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2)"><span style="width:14px;height:14px;border-radius:3px;background:#e8f5e9;border:1px solid #80c080;display:inline-block"></span>Resposta certa</span>
+      </div>`:'';
+
     gridBottom=`
       <div class="notes-wrap">
         <div class="notes-label"><i class="ti ti-notes" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Notas do Revisor</div>
         <div class="notes-readonly">${solverNotes?solverNotes.replace(/</g,'&lt;'):'<span style="opacity:.6;font-style:italic">Sem notas do revisor.</span>'}</div>
+        ${legendHtml}
       </div>`;
+
     cluesPanelTop=`
-      <div class="stage-banner green"><i class="ti ti-circle-check"></i><span>Puzzle aprovado pelo revisor!</span></div>
+      <div class="stage-banner ${bannerColor}"><i class="ti ${statusIcon}"></i><span>${statusMsg}</span></div>
       <div class="clues-title">Definições</div>`;
     actHtml=`
       <button class="btn secondary" onclick="startCreatorEdit()"><i class="ti ti-edit"></i> Corrigir</button>
