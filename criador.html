@@ -12,6 +12,7 @@
   --bg-base:#f5f5f3;--bg-surface:#fff;--bg-raised:#f0efed;--bg-input:#fafaf8;
   --border:#e2e0db;--border-sub:#ece9e3;--text-1:#1a1a18;--text-2:#6b6b68;--text-3:#b0afa9;
   --accent:#185FA5;--accent-soft:#e6f1fb;--cell:42px;--label-gap:8px;
+  --green:#2d6a2d;--green-bg:#1a3a1a;--green-border:#2d5a2d;--green-text:#6fcf6f;
 }
 html.dark{
   --bg-base:#0d0d0d;--bg-surface:#151515;--bg-raised:#1a1a1a;--bg-input:#111;
@@ -19,6 +20,8 @@ html.dark{
   --accent-soft:#0c2a45;
 }
 body{font-family:'Inter',sans-serif;background:var(--bg-base);color:var(--text-1);min-height:100vh;font-size:14px;}
+
+/* HEADER */
 .header{background:var(--bg-surface);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;}
 .app-title{font-size:15px;font-weight:600;letter-spacing:-.3px;}
 .app-role{font-size:11px;font-weight:500;color:var(--text-3);background:var(--bg-raised);border:1px solid var(--border);border-radius:10px;padding:2px 8px;}
@@ -30,8 +33,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg-base);color:var(--text-1
 .icon-btn{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .12s;}
 .icon-btn:hover{background:var(--border);color:var(--text-1);}
 .dir-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--text-2);background:var(--bg-raised);border:1px solid var(--border);border-radius:12px;padding:3px 10px;}
-.approved-pill{font-size:11px;font-weight:500;background:#1a3a1a;color:#6fcf6f;border:1px solid #2d5a2d;border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px;}
-.main{display:flex;min-height:calc(100vh - 52px - 52px);}
+
+/* LAYOUT */
+.main{display:flex;min-height:calc(100vh - 52px - 72px);}
 .grid-panel{padding:24px 20px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;}
 .grid-container{display:inline-grid;grid-template-columns:calc(var(--cell) + var(--label-gap)) auto;grid-template-rows:calc(var(--cell)*0.4 + var(--label-gap)) auto;}
 .grid-col-labels{grid-column:2;grid-row:1;display:flex;align-items:flex-end;padding-bottom:var(--label-gap);}
@@ -48,7 +52,10 @@ html.dark .cell.active-cell{background:#0c2a45;}
 .cell.active-cell::after{content:'';position:absolute;bottom:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.8;}
 .cell-letter{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:var(--text-1);text-transform:uppercase;line-height:1;pointer-events:none;}
 .cell-input{position:absolute;inset:0;width:100%;height:100%;background:transparent;border:none;outline:none;opacity:0;cursor:pointer;font-size:0;}
-.clues-panel{flex:1;background:var(--bg-surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;max-height:calc(100vh - 52px - 52px);}
+
+/* CLUES PANEL */
+.clues-panel{flex:1;background:var(--bg-surface);border-left:1px solid var(--border);padding:20px;overflow-y:auto;max-height:calc(100vh - 52px - 72px);}
+.clues-title{font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:14px;letter-spacing:-.2px;}
 .clues-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-3);margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border-sub);}
 .clue-row-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:flex-start;}
 .clue-item{display:flex;gap:6px;align-items:flex-start;flex:1;min-width:160px;}
@@ -58,22 +65,45 @@ html.dark .cell.active-cell{background:#0c2a45;}
 .clue-input:focus{outline:2px solid var(--accent);border-color:transparent;}
 .clue-len{font-size:10px;color:var(--text-3);padding-top:8px;flex-shrink:0;}
 .section-gap{margin-top:16px;}
-.hint-text{font-size:11px;color:var(--text-3);}
+
+/* NOTES */
 .notes-wrap{display:flex;flex-direction:column;gap:5px;}
 .notes-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-3);}
-.notes-readonly{font-family:'Inter',sans-serif;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:var(--bg-raised);color:var(--text-2);min-height:80px;width:100%;line-height:1.6;white-space:pre-wrap;}
-.solver-banner{display:flex;align-items:center;gap:8px;background:#1a3a1a;border:1px solid #2d5a2d;border-radius:8px;padding:10px 14px;margin-bottom:14px;}
-.solver-banner i{color:#6fcf6f;font-size:16px;}
-.solver-banner span{font-size:12px;font-weight:600;color:#6fcf6f;}
-.actions{position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:52px;}
-.actions-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.btn{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-1);cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .1s;}
+.notes-readonly{font-family:'Inter',sans-serif;font-size:13px;line-height:1.7;border:1px solid var(--green-border);border-radius:8px;padding:12px 14px;background:var(--green-bg);color:var(--green-text);min-height:80px;width:100%;white-space:pre-wrap;}
+
+/* STAGE BANNERS */
+.stage-banner{display:flex;align-items:center;gap:10px;border-radius:8px;padding:12px 16px;margin-bottom:16px;}
+.stage-banner.green{background:var(--green-bg);border:1px solid var(--green-border);}
+.stage-banner i{font-size:18px;color:var(--green-text);}
+.stage-banner span{font-size:13px;font-weight:600;color:var(--green-text);}
+
+/* ACTION BAR — simplified, bigger */
+.actions{position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:10px;min-height:72px;}
+.actions-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+
+/* Button sizes — bigger for older users */
+.btn{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-1);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s;white-space:nowrap;}
 .btn:hover{background:var(--border);}
-.btn.primary{background:var(--text-1);color:var(--bg-base);border-color:var(--text-1);}
+.btn.primary{background:var(--text-1);color:var(--bg-base);border-color:var(--text-1);font-size:14px;padding:10px 22px;}
 html.dark .btn.primary:hover{background:#c8c8c8;}
 html:not(.dark) .btn.primary:hover{background:#333;}
-kbd{display:inline-block;background:var(--border);border-radius:3px;padding:1px 5px;font-size:11px;color:var(--text-1);}
-.copy-toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:var(--text-1);color:var(--bg-base);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;}
+.btn.green{background:var(--green-bg);color:var(--green-text);border-color:var(--green-border);font-size:14px;padding:10px 22px;}
+.btn.green:hover{background:#224422;}
+.btn.secondary{font-size:12px;padding:7px 14px;color:var(--text-2);}
+
+/* More menu */
+.more-menu-wrap{position:relative;}
+.more-menu{position:absolute;bottom:52px;right:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:180px;box-shadow:0 4px 16px rgba(0,0,0,.12);display:none;z-index:100;}
+.more-menu.open{display:flex;flex-direction:column;gap:2px;}
+.more-menu .btn{width:100%;justify-content:flex-start;border:none;border-radius:5px;font-size:12px;padding:7px 10px;}
+
+/* hint */
+.hint{font-size:11px;color:var(--text-3);line-height:1.5;}
+
+/* autosave indicator */
+.autosave{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px;}
+
+.copy-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--text-1);color:var(--bg-base);border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999;}
 .copy-toast.show{opacity:1;}
 </style>
 </head>
@@ -532,8 +562,32 @@ function shareWithSolver(){
     .catch(()=>prompt('Copia este link e envia ao revisor:',url));
 }
 
+function toggleMoreMenu(){
+  const m=document.getElementById('more-menu');
+  if(m) m.classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  const m=document.getElementById('more-menu');
+  if(m&&m.classList.contains('open')&&!e.target.closest('.more-menu-wrap')) m.classList.remove('open');
+});
+
+// Auto-save silently every 30s when building
+let autoSaveInterval=null;
+function startAutoSave(){
+  if(autoSaveInterval) return;
+  autoSaveInterval=setInterval(async()=>{
+    if(!creatorApproved){
+      saveCreatorClues();
+      const body={id:puzzleNum,grid,solutions,clue_inputs:clueInputs,creator_approved:false,solver_grid:null,solver_notes:'',solver_approved:false};
+      await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas`,{method:'POST',headers:{...HEADERS,'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(body)}).catch(()=>{});
+      const el=document.getElementById('autosave-indicator');
+      if(el){el.textContent='Guardado automaticamente';setTimeout(()=>{if(el)el.textContent='';},2000);}
+    }
+  },30000);
+}
+startAutoSave();
+
 function fullRender(){
-  // Flush any live textarea values to JS variable before re-rendering
   saveCreatorClues();
   clues=computeClues();
   const themeIcon=isDark?'ti-sun':'ti-moon';
@@ -566,36 +620,64 @@ function fullRender(){
 
   const dirPill=`<span class="dir-pill" id="dir-pill" style="opacity:${selR!==null?1:.3}"><i class="ti ${selR!==null&&curDir==='V'?'ti-arrow-down':'ti-arrows-cross'}"></i> ${selR!==null?(curDir==='H'?'Horizontal':'Vertical'):'—'}</span>`;
 
-  const gridBottom=solverApproved
-    ?`<div class="notes-wrap"><div class="notes-label"><i class="ti ti-notes" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Notas do Revisor</div><div class="notes-readonly">${solverNotes?solverNotes.replace(/</g,'&lt;'):'<span style="color:var(--text-3);font-style:italic">Sem notas do revisor.</span>'}</div></div>`
-    :'';
-
+  // ── STAGE 1: Building ──
   let actHtml='';
+  let cluesPanelTop='<div class="clues-title">Definições</div>';
+  let gridBottom='';
+
   if(!creatorApproved){
+    // Stage 1 — clean, just approve
     actHtml=`
-      <button class="btn" onclick="saveState()"><i class="ti ti-device-floppy"></i> Guardar</button>
-      <button class="btn" onclick="loadState()"><i class="ti ti-folder-open"></i> Carregar</button>
-      <span class="hint-text">Clica=selecionar · clica de novo=direção · <kbd>Espaço</kbd>=preta</span>
+      <span class="autosave" id="autosave-indicator"></span>
+      <span class="hint" style="color:var(--text-3);font-size:11px;">Clica=selecionar · clica de novo=direção · <strong>Espaço</strong>=célula preta</span>
       <div class="actions-right">
+        <button class="btn secondary" onclick="loadState()"><i class="ti ti-folder-open"></i> Carregar</button>
         <button class="btn primary" onclick="approveCreator()"><i class="ti ti-check"></i> Aprovar</button>
       </div>`;
-  } else {
+
+  } else if(!solverApproved){
+    // Stage 2 — approved, waiting for solver
+    cluesPanelTop=`
+      <div class="stage-banner green"><i class="ti ti-check-circle"></i><span>Puzzle aprovado — aguarda o revisor</span></div>
+      <div class="clues-title">Definições</div>`;
     actHtml=`
-      <span class="approved-pill"><i class="ti ti-check"></i> Aprovado</span>
-      ${solverApproved?'<span class="approved-pill"><i class="ti ti-user-check"></i> Revisor aprovou</span>':''}
-      <button class="btn" onclick="startCreatorEdit()"><i class="ti ti-edit"></i> Editar</button>
-      <button class="btn" onclick="saveState()"><i class="ti ti-device-floppy"></i> Guardar</button>
+      <button class="btn secondary" onclick="startCreatorEdit()"><i class="ti ti-edit"></i> Corrigir</button>
       <div class="actions-right">
-        <button class="btn" onclick="copyForMessenger()"><i class="ti ti-copy"></i> Copiar</button>
-        <button class="btn" onclick="shareWithSolver()"><i class="ti ti-share"></i> Partilhar com Revisor</button>
-        <button class="btn" onclick="saveGridImage()"><i class="ti ti-photo-down"></i> Grelha</button>
-        <button class="btn" onclick="saveCluesImage()"><i class="ti ti-file-download"></i> Definições</button>
+        <div class="more-menu-wrap">
+          <button class="btn secondary" onclick="toggleMoreMenu()"><i class="ti ti-dots"></i></button>
+          <div class="more-menu" id="more-menu">
+            <button class="btn" onclick="saveGridImage()"><i class="ti ti-photo-down"></i> Guardar imagem da grelha</button>
+            <button class="btn" onclick="saveCluesImage()"><i class="ti ti-file-download"></i> Guardar imagem das definições</button>
+          </div>
+        </div>
+        <button class="btn primary" onclick="shareWithSolver()"><i class="ti ti-share"></i> Enviar ao Revisor</button>
+      </div>`;
+
+  } else {
+    // Stage 3 — solver approved
+    gridBottom=`
+      <div class="notes-wrap">
+        <div class="notes-label"><i class="ti ti-notes" style="font-size:12px;vertical-align:-1px;margin-right:4px;"></i>Notas do Revisor</div>
+        <div class="notes-readonly">${solverNotes?solverNotes.replace(/</g,'&lt;'):'<span style="opacity:.6;font-style:italic">Sem notas do revisor.</span>'}</div>
+      </div>`;
+    cluesPanelTop=`
+      <div class="stage-banner green"><i class="ti ti-circle-check"></i><span>Puzzle aprovado pelo revisor!</span></div>
+      <div class="clues-title">Definições</div>`;
+    actHtml=`
+      <button class="btn secondary" onclick="startCreatorEdit()"><i class="ti ti-edit"></i> Corrigir</button>
+      <button class="btn secondary" onclick="newPuzzle()"><i class="ti ti-plus"></i> Novo Puzzle</button>
+      <div class="actions-right">
+        <div class="more-menu-wrap">
+          <button class="btn secondary" onclick="toggleMoreMenu()"><i class="ti ti-dots"></i></button>
+          <div class="more-menu" id="more-menu">
+            <button class="btn" onclick="saveGridImage()"><i class="ti ti-photo-down"></i> Guardar imagem da grelha</button>
+            <button class="btn" onclick="saveCluesImage()"><i class="ti ti-file-download"></i> Guardar imagem das definições</button>
+            <button class="btn" onclick="shareWithSolver()"><i class="ti ti-share"></i> Enviar ao Revisor</button>
+          </div>
+        </div>
+        <button class="btn green" onclick="copyForMessenger()"><i class="ti ti-copy"></i> Copiar para partilhar</button>
       </div>`;
   }
-
-  const solverBanner=solverApproved
-    ?`<div class="solver-banner"><i class="ti ti-circle-check"></i><span>Puzzle aprovado pelo revisor</span></div>`
-    :'';
 
   document.getElementById('app').innerHTML=`
     <div class="header">
@@ -613,8 +695,7 @@ function fullRender(){
         ${gridBottom}
       </div>
       <div class="clues-panel">
-        ${solverBanner}
-        <div class="clues-section-label" style="margin-bottom:12px;color:var(--text-1);font-size:13px;font-weight:700;text-transform:none;letter-spacing:0;">Definições</div>
+        ${cluesPanelTop}
         <div id="clues-inner">${buildCluesHTML()}</div>
       </div>
     </div>
@@ -622,6 +703,19 @@ function fullRender(){
   `;
 
   restoreClueInputs();
+}
+
+function newPuzzle(){
+  if(!confirm('Começar um novo puzzle? O atual ficará guardado na base de dados.')) return;
+  // increment puzzle number
+  const num=parseInt(puzzleNum)||0;
+  puzzleNum=String(num+1).padStart(3,'0');
+  grid=Array.from({length:N},()=>Array(N).fill(false));
+  solutions=Array.from({length:N},()=>Array(N).fill(''));
+  clues={};clueInputs={};creatorApproved=false;solverApproved=false;
+  solverNotes='';activeClueKey=null;selR=null;selC=null;curDir='H';
+  clues=computeClues();
+  fullRender();
 }
 
 clues=computeClues();

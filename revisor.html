@@ -263,7 +263,7 @@ function buildCluesHTML(){
 function clickClueTag(k){
   activeClueKey=k;
   if(clues[k]){const[r,c]=clues[k].cells[0];selR=r;selC=c;curDir=clues[k].direction;partialRender();focusInput(r,c);}
-  // Smart notes: click label → insert/jump to note line
+  // Smart notes: click label → insert/jump to note line, focus and scroll
   const ta=document.getElementById('solver-notes-input');
   if(!ta)return;
   const prefix=k+' — ';
@@ -277,6 +277,7 @@ function clickClueTag(k){
     ta.value=ta.value+sep+prefix;solverNotes=ta.value;
     ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
   }
+  ta.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function renderStatusBadge(){
