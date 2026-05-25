@@ -358,7 +358,8 @@ async function dbLoad(){
   const rows=await res.json();
   if(!rows.length){alert(`Puzzle #${id} não encontrado.`);return;}
   const row=rows[0];
-  grid=row.grid;
+  // Normalise grid: ensure every cell is a true boolean
+  grid=Array.from({length:N},(_,r)=>Array.from({length:N},(_,c)=>!!row.grid[r][c]));
   solutions=row.solutions;
   clueInputs=row.clue_inputs||{};
   creatorApproved=row.creator_approved||false;
@@ -398,6 +399,47 @@ async function startCreatorEdit(){
 
 function saveCreatorClues(){document.querySelectorAll('.clue-input').forEach(el=>{const k=el.dataset.key;if(k&&el.value)clueInputs[k]=el.value;});}
 
+async function promptOpenPuzzle(){
+  // Fetch all puzzle IDs from Supabase
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?select=id,creator_approved,solver_approved,solver_status,updated_at&order=id.desc`,{headers:HEADERS});
+    const rows=await res.json();
+    if(!rows.length){alert('Não há puzzles guardados ainda.');return;}
+    // Build a prompt string listing all puzzles
+    const lines=rows.map(r=>{
+      let status='rascunho';
+      if(r.creator_approved&&!r.solver_approved) status='aguarda revisor';
+      else if(r.solver_approved) status=r.solver_status||'aprovado';
+      return `#${r.id} — ${status}`;
+    }).join('\n');
+    const id=prompt(`Puzzles disponíveis:\n\n${lines}\n\nEscreve o número do puzzle a abrir:`);
+    if(id) await dbLoadById(id.trim().replace('#','').padStart(3,'0'));
+  } catch(e){
+    const id=prompt('Número do puzzle (ex: 001):');
+    if(id) await dbLoadById(id.trim().padStart(3,'0'));
+  }
+}
+
+async function dbLoadById(id){
+  const res=await fetch(`${SUPA_URL}/rest/v1/palavras_cruzadas?id=eq.${encodeURIComponent(id)}&select=*`,{headers:HEADERS});
+  if(!res.ok){alert('Erro ao carregar.');return;}
+  const rows=await res.json();
+  if(!rows.length){alert(`Puzzle #${id} não encontrado.`);return;}
+  const row=rows[0];
+  puzzleNum=row.id;
+  grid=Array.from({length:N},(_,r)=>Array.from({length:N},(_,c)=>!!row.grid[r][c]));
+  solutions=row.solutions;
+  clueInputs=row.clue_inputs||{};
+  creatorApproved=row.creator_approved||false;
+  solverApproved=row.solver_approved||false;
+  solverNotes=row.solver_notes||'';
+  solverGrid=row.solver_grid||null;
+  solverStatus=row.solver_status||null;
+  clues=computeClues();selR=null;selC=null;activeClueKey=null;
+  fullRender();
+  showToast(`Puzzle #${id} carregado ✓`);
+}
+
 async function newPuzzle(){
   if(!confirm('Começar um novo puzzle? O atual ficará guardado na base de dados.')) return;
   // Fetch highest existing puzzle ID from Supabase
@@ -422,6 +464,8 @@ async function newPuzzle(){
   clues=computeClues();
   fullRender();
 }
+
+
 let pollInterval=null;
 function startPolling(){
   if(pollInterval) return;
@@ -701,7 +745,7 @@ function fullRender(){
       <span class="autosave" id="autosave-indicator"></span>
       <span class="hint" style="color:var(--text-3);font-size:11px;">Clica=selecionar · clica de novo=direção · <strong>Espaço</strong>=célula preta</span>
       <div class="actions-right">
-        <button class="btn secondary" onclick="loadState()"><i class="ti ti-folder-open"></i> Carregar</button>
+        <button class="btn secondary" onclick="promptOpenPuzzle()"><i class="ti ti-folder-open"></i> Abrir puzzle</button>
         <button class="btn primary" onclick="approveCreator()"><i class="ti ti-check"></i> Aprovar</button>
       </div>`;
 

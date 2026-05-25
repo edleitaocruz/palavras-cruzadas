@@ -342,7 +342,8 @@ async function loadPuzzleById(id){
   if(!rows.length){alert(`Puzzle #${id} não encontrado. Pede ao criador para guardar primeiro.`);return;}
   const row=rows[0];
   puzzleNum=row.id;
-  grid=row.grid;
+  // Normalise grid: ensure every cell is a true boolean
+  grid=Array.from({length:N},(_,r)=>Array.from({length:N},(_,c)=>!!row.grid[r][c]));
   window._solutions=row.solutions;
   clueInputs=row.clue_inputs||{};
   clues=computeClues();
@@ -352,7 +353,7 @@ async function loadPuzzleById(id){
   solverNotes=row.solver_notes||'';
   solverApproved=row.solver_approved||false;
   solverStatus=row.solver_status||null;
-  solverEditing=false;solverStatus=null;activeClueKey=null;selR=null;selC=null;
+  solverEditing=false;activeClueKey=null;selR=null;selC=null;
   fullRender();
   showToast('Puzzle carregado ✓');
 }
